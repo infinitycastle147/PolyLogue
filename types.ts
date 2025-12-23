@@ -1,3 +1,4 @@
+
 export type PersonaCategory = 'FAMOUS' | 'EXPERT' | 'ANIME' | 'CUSTOM';
 
 export interface Persona {
@@ -8,7 +9,7 @@ export interface Persona {
   traits: string[];
   communicationStyle: string;
   avatarUrl: string;
-  color: string; // Tailwind color class for accents
+  color: string;
   systemPromptFragment?: string;
 }
 
@@ -23,13 +24,14 @@ export interface Poll {
   question: string;
   options: PollOption[];
   isActive: boolean;
-  createdBy: string; // Persona ID or 'user'
+  createdBy: string;
+  hasUserVoted?: boolean; // Track if the local user has participated
 }
 
 export interface Message {
   id: string;
   conversationId: string;
-  senderId: string; // 'user' or Persona ID
+  senderId: string;
   text: string;
   timestamp: number;
   type: 'TEXT' | 'POLL' | 'SYSTEM';
@@ -49,13 +51,12 @@ export interface AppState {
   conversations: Conversation[];
   activeConversationId: string | null;
   personas: Persona[];
-  view: 'HOME' | 'CREATE_GROUP' | 'CREATE_PERSONA' | 'CHAT' | 'API_KEY';
+  view: ViewState;
 }
 
 export enum ViewState {
   HOME = 'HOME',
   CREATE_GROUP = 'CREATE_GROUP',
   CREATE_PERSONA = 'CREATE_PERSONA',
-  CHAT = 'CHAT',
-  API_KEY = 'API_KEY'
+  CHAT = 'CHAT'
 }

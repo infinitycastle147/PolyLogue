@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppState, Conversation, ViewState, Message, Persona } from './types';
 import { MAX_CONVERSATIONS, PREDEFINED_PERSONAS } from './constants';
-import { initializeGemini } from './services/gemini';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import CreateGroup from './components/CreateGroup';
 import CreatePersona from './components/CreatePersona';
-import { Key } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
   const [customPersonas, setCustomPersonas] = useState<Persona[]>([]);
@@ -14,45 +14,24 @@ const App: React.FC = () => {
     conversations: [],
     activeConversationId: null,
     personas: PREDEFINED_PERSONAS,
-    view: ViewState.API_KEY // Start by forcing API Key entry for demo purposes
+    view: ViewState.HOME
   });
 
-  const [apiKeyInput, setApiKeyInput] = useState('');
-
-  // Combine predefined and custom personas
   const allPersonas = [...PREDEFINED_PERSONAS, ...customPersonas];
 
-  // Auto-load API Key if in env (for dev convenience if configured via webpack/vite define plugin, otherwise empty)
-  useEffect(() => {
-    // Check if process.env.API_KEY is available (bundled)
-    const envKey = process.env.API_KEY;
-    if (envKey) {
-       initializeGemini(envKey);
-       setState(s => ({ ...s, view: ViewState.HOME }));
-    }
-  }, []);
-
-  // Update state personas whenever custom personas change
   useEffect(() => {
     setState(s => ({ ...s, personas: allPersonas }));
   }, [customPersonas]);
 
-  const handleApiKeySubmit = () => {
-    if (apiKeyInput.trim()) {
-      initializeGemini(apiKeyInput.trim());
-      setState(s => ({ ...s, view: ViewState.HOME }));
-    }
-  };
-
   const handleCreateConversation = (name: string, personaIds: string[]) => {
     if (state.conversations.length >= MAX_CONVERSATIONS) {
-      alert("Maximum conversation limit reached.");
+      alert("Nexus: Operational limit reached (10 swarms).");
       return;
     }
 
     const newConv: Conversation = {
-      id: Date.now().toString(),
-      name,
+      id: `nexus_${Date.now()}`,
+      name: name || `Swarm ${state.conversations.length + 1}`,
       createdAt: Date.now(),
       lastMessageAt: Date.now(),
       personaIds,
@@ -61,7 +40,7 @@ const App: React.FC = () => {
 
     setState(s => ({
       ...s,
-      conversations: [newConv, ...s.conversations], // Add to top
+      conversations: [newConv, ...s.conversations],
       activeConversationId: newConv.id,
       view: ViewState.CHAT
     }));
@@ -81,48 +60,10 @@ const App: React.FC = () => {
 
   const activeConversation = state.conversations.find(c => c.id === state.activeConversationId);
 
-  // Render Logic
-  if (state.view === ViewState.API_KEY) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Key size={32} />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to PolyLogue</h1>
-          <p className="text-gray-500 mb-6">Enter your Google Gemini API Key to start simulating multi-persona conversations.</p>
-          
-          <input
-            type="password"
-            value={apiKeyInput}
-            onChange={(e) => setApiKeyInput(e.target.value)}
-            placeholder="AIzaSy..."
-            className="w-full px-4 py-3 text-gray-900 placeholder-gray-400 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 mb-4 outline-none"
-          />
-          
-          <button
-            onClick={handleApiKeySubmit}
-            disabled={!apiKeyInput}
-            className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-              apiKeyInput 
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            Start
-          </button>
-          <p className="text-xs text-gray-400 mt-4">
-             Your key is used only locally for this session.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-100">
-      {/* Sidebar - Hidden on mobile if in chat mode */}
-      <div className={`${state.view === ViewState.CHAT ? 'hidden md:flex' : 'flex'} w-full md:w-auto`}>
+    <div className="flex h-screen w-screen overflow-hidden bg-[#020617] text-slate-200 font-sans selection:bg-indigo-500/30">
+      {/* Nexus Sidebar */}
+      <div className={`${state.view === ViewState.CHAT ? 'hidden md:flex' : 'flex'} w-full md:w-auto z-20 border-r border-slate-800/50 shadow-2xl`}>
         <Sidebar
           conversations={state.conversations}
           activeId={state.activeConversationId}
@@ -132,13 +73,24 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full relative">
+      {/* Main Hub */}
+      <div className="flex-1 flex flex-col h-full relative bg-[#0b0f19] md:rounded-l-[2rem] md:shadow-[-20px_0_60px_-10px_rgba(0,0,0,0.4)] overflow-hidden border-l border-slate-800/50">
         {state.view === ViewState.HOME && (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
-             <div className="max-w-md">
-                <h2 className="text-2xl font-bold text-gray-700 mb-2">Select a Conversation</h2>
-                <p>Choose an existing group from the sidebar or create a new one to begin exploring perspectives.</p>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-700">
+             <div className="max-w-md bg-slate-900/40 p-12 rounded-[2.5rem] border border-slate-800/50 glass">
+                <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-3xl shadow-2xl shadow-indigo-500/20 flex items-center justify-center mx-auto mb-8 animate-bounce transition-all duration-[3000ms]">
+                    <Sparkles className="text-white" size={40} />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">Swarm Architect</h2>
+                <p className="text-slate-400 leading-relaxed mb-10">
+                  Initialize a multi-agent neural pipeline to simulate complex interactions and strategic discussions.
+                </p>
+                <button 
+                    onClick={() => setState(s => ({ ...s, view: ViewState.CREATE_GROUP }))}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
+                >
+                    Initialize Swarm
+                </button>
              </div>
           </div>
         )}

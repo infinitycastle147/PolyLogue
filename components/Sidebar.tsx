@@ -1,6 +1,8 @@
-import React from 'react';
+
+import React, { useMemo } from 'react';
 import { Conversation, Persona } from '../types';
-import { MessageSquare, Plus, Search, Settings } from 'lucide-react';
+import { MessageSquare, Plus, Search, ChevronRight, Zap } from 'lucide-react';
+import Avatar from './Avatar';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -11,101 +13,92 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ conversations, activeId, onSelect, onCreateNew, personas }) => {
+  // Optimization: Pre-calculate persona map to avoid O(N) filter inside O(M) conversation list
+  const personaLookup = useMemo(() => {
+    const map = new Map<string, Persona>();
+    personas.forEach(p => map.set(p.id, p));
+    return map;
+  }, [personas]);
+
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200 w-full md:w-80 lg:w-96">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          PolyLogue
+    <div className="flex flex-col h-full bg-[#020617] w-full md:w-80 lg:w-96">
+      <div className="px-8 py-8 flex items-center justify-between">
+        <h1 className="text-xl font-black text-white tracking-tighter flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Zap size={20} fill="white" className="text-white" />
+            </div>
+            NEXUS AI
         </h1>
-        <button className="p-2 text-gray-400 hover:text-gray-600">
-          <Settings size={20} />
-        </button>
       </div>
 
-      {/* Action */}
-      <div className="p-4">
+      <div className="px-6 mb-4">
         <button 
           onClick={onCreateNew}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-medium transition-all shadow-md shadow-indigo-200"
+          className="w-full bg-slate-900 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-800 hover:border-indigo-500 py-4 px-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all duration-300 group"
         >
-          <Plus size={20} />
-          New Discussion
+          <Plus size={20} className="text-indigo-500 group-hover:text-white" />
+          New Neural Swarm
         </button>
       </div>
 
-      {/* Search (Visual Only for MVP) */}
-      <div className="px-4 pb-2">
+      <div className="px-6 py-4">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
           <input 
             type="text" 
-            placeholder="Search discussions..." 
-            className="w-full bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            placeholder="Search swarms..." 
+            className="w-full bg-[#0b0f19] text-slate-200 placeholder-slate-600 border border-slate-800 rounded-2xl py-3 pl-11 pr-4 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
           />
         </div>
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {conversations.length === 0 ? (
-          <div className="text-center text-gray-400 mt-10 p-4">
-            <MessageSquare size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="text-sm">No conversations yet.</p>
-            <p className="text-xs mt-1">Create a group to start.</p>
-          </div>
-        ) : (
-          conversations.map(conv => {
+      <div className="flex-1 overflow-y-auto px-4 space-y-3 pb-4 custom-scrollbar">
+        {conversations.map(conv => {
             const isActive = activeId === conv.id;
-            const participants = personas.filter(p => conv.personaIds.includes(p.id));
+            const participants = conv.personaIds.map(id => personaLookup.get(id)).filter(Boolean) as Persona[];
             const lastMsg = conv.messages[conv.messages.length - 1];
             
             return (
-              <div 
+              <button 
                 key={conv.id}
                 onClick={() => onSelect(conv.id)}
-                className={`p-3 rounded-xl cursor-pointer transition-colors group ${
-                  isActive ? 'bg-indigo-50 border-indigo-100' : 'hover:bg-gray-50 border-transparent'
-                } border`}
+                className={`w-full text-left p-5 rounded-3xl cursor-pointer transition-all duration-300 relative border ${
+                  isActive 
+                    ? 'bg-slate-900 border-indigo-500/30 shadow-2xl shadow-black/20 translate-x-1' 
+                    : 'bg-transparent border-transparent hover:bg-slate-900/40 hover:border-slate-800'
+                }`}
               >
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className={`font-semibold text-sm truncate pr-2 ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
                     {conv.name}
                   </h3>
                   {lastMsg && (
-                    <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                    <span className="text-[9px] text-slate-600 font-mono">
                        {new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </span>
                   )}
                 </div>
                 
-                <p className="text-xs text-gray-500 truncate mb-3 h-4">
-                   {lastMsg ? (lastMsg.type === 'POLL' ? '📊 Poll active' : lastMsg.text) : 'New conversation'}
+                <p className="text-[11px] truncate mb-4 text-slate-500 font-medium">
+                   {lastMsg ? lastMsg.text : 'Pending initialization...'}
                 </p>
 
-                <div className="flex -space-x-1.5">
-                  {participants.slice(0, 4).map(p => (
-                    <img 
-                      key={p.id} 
-                      src={p.avatarUrl} 
-                      alt={p.name}
-                      className="w-5 h-5 rounded-full ring-2 ring-white object-cover"
-                    />
-                  ))}
-                  {participants.length > 4 && (
-                    <div className="w-5 h-5 rounded-full bg-gray-100 text-[10px] flex items-center justify-center ring-2 ring-white text-gray-500 font-bold">
-                      +{participants.length - 4}
+                <div className="flex items-center justify-between">
+                    <div className="flex -space-x-2">
+                    {participants.slice(0, 5).map(p => (
+                        <Avatar key={p.id} src={p.avatarUrl} name={p.name} color={p.color} className="w-6 h-6 ring-2 ring-[#020617]" />
+                    ))}
                     </div>
-                  )}
+                    {isActive && <ChevronRight size={14} className="text-indigo-500" />}
                 </div>
-              </div>
+              </button>
             );
           })
-        )}
+        }
       </div>
       
-      <div className="p-4 text-[10px] text-gray-400 text-center border-t border-gray-100">
-        PolyLogue v1.0 • Gemini 2.5 Flash
+      <div className="p-6 text-[10px] text-slate-600 font-mono tracking-tighter uppercase border-t border-slate-900">
+        Nexus Swarm v3.1-F • Flash Native
       </div>
     </div>
   );
